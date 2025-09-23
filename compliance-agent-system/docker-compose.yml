@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  compliance-agent:
+    build: .
+    container_name: compliance-agent
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    restart: unless-stopped
+    command: python examples/basic_usage.py
+
+  mcp-compliance:
+    build: .
+    container_name: mcp-compliance-server
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    restart: unless-stopped
+    command: python mcp_servers/compliance_mcp_server.py
+
+  mcp-knowledge-base:
+    build: .
+    container_name: mcp-kb-server
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    restart: unless-stopped
+    command: python mcp_servers/kb_mcp_server.py

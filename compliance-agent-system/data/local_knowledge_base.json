@@ -1,0 +1,97 @@
+{
+  "version": "1.0",
+  "created_at": "2025-09-23T16:42:29.113430",
+  "updated_at": "2025-09-23T16:42:29.113432",
+  "documents": [
+    {
+      "id": "doc_001",
+      "content": "Data Protection Policy: All customer personal data must be encrypted at rest and in transit. Access to customer data should be restricted to authorized personnel only. Regular audits must be conducted to ensure compliance with GDPR and other data protection regulations. Data retention policies should be clearly defined and enforced.",
+      "metadata": {
+        "category": "policy",
+        "type": "data_protection",
+        "department": "security",
+        "last_reviewed": "2023-12-01",
+        "tags": [
+          "gdpr",
+          "encryption",
+          "data-protection",
+          "compliance"
+        ]
+      },
+      "created_at": "2025-09-23T16:42:29.110008",
+      "updated_at": "2025-09-23T16:42:29.110018"
+    },
+    {
+      "id": "doc_002",
+      "content": "Payment Card Industry (PCI) Compliance: Organizations handling credit card information must comply with PCI-DSS standards. This includes maintaining a secure network, protecting cardholder data, implementing strong access control measures, regularly monitoring and testing networks, and maintaining an information security policy. Credit card numbers must be masked when displayed and encrypted when stored.",
+      "metadata": {
+        "category": "compliance",
+        "type": "pci_dss",
+        "department": "finance",
+        "certification_required": true,
+        "tags": [
+          "pci-dss",
+          "credit-card",
+          "payment",
+          "security"
+        ]
+      },
+      "created_at": "2025-09-23T16:42:29.110338",
+      "updated_at": "2025-09-23T16:42:29.110340"
+    },
+    {
+      "id": "doc_003",
+      "content": "Employee Data Handling Guidelines: Employee personal information including SSN, home addresses, and salary information must be treated as confidential. Access should be limited to HR personnel and authorized managers. All employee records must be stored in secure systems with audit logging enabled. Employees have the right to access their personal data upon request.",
+      "metadata": {
+        "category": "policy",
+        "type": "hr_guidelines",
+        "department": "human_resources",
+        "sensitivity": "high",
+        "tags": [
+          "employee-data",
+          "privacy",
+          "hr",
+          "confidential"
+        ]
+      },
+      "created_at": "2025-09-23T16:42:29.112375",
+      "updated_at": "2025-09-23T16:42:29.112378"
+    },
+    {
+      "id": "doc_004",
+      "content": "HIPAA Compliance Requirements: Healthcare organizations must ensure the confidentiality, integrity, and availability of all electronic protected health information (ePHI). Physical and technical safeguards must be implemented. Business Associate Agreements (BAAs) are required with all third-party vendors handling ePHI. Regular risk assessments and employee training are mandatory.",
+      "metadata": {
+        "category": "compliance",
+        "type": "hipaa",
+        "department": "healthcare",
+        "regulatory_body": "HHS",
+        "tags": [
+          "hipaa",
+          "healthcare",
+          "ephi",
+          "medical-records"
+        ]
+      },
+      "created_at": "2025-09-23T16:42:29.112747",
+      "updated_at": "2025-09-23T16:42:29.112750"
+    },
+    {
+      "id": "doc_005",
+      "content": "Incident Response Plan: In case of a data breach or security incident, immediately notify the security team. Document all details of the incident including time, affected systems, and potential data exposure. Contain the breach to prevent further damage. Assess the impact and determine if customer notification is required under breach notification laws. Conduct post-incident review to prevent recurrence.",
+      "metadata": {
+        "category": "procedure",
+        "type": "incident_response",
+        "department": "security",
+        "priority": "critical",
+        "tags": [
+          "incident-response",
+          "breach",
+          "security",
+          "emergency"
+        ]
+      },
+      "created_at": "2025-09-23T16:42:29.113147",
+      "updated_at": "2025-09-23T16:42:29.113149"
+    }
+  ]
+}

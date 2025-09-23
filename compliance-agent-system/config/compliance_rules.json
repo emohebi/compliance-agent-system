@@ -1,0 +1,46 @@
+{
+  "rules": [
+    {
+      "rule_id": "PII_001",
+      "name": "PII Detection",
+      "description": "Check for personally identifiable information",
+      "category": "data_protection",
+      "severity": "high",
+      "patterns": [
+        "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+        "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+        "\\b(?:\\d{4}[-\\s]?){3}\\d{4}\\b"
+      ],
+      "enabled": true
+    },
+    {
+      "rule_id": "SEC_001",
+      "name": "Security Keywords",
+      "description": "Check for security-sensitive keywords",
+      "category": "security",
+      "severity": "medium",
+      "keywords": [
+        "password",
+        "api_key",
+        "secret",
+        "token",
+        "credential"
+      ],
+      "enabled": true
+    },
+    {
+      "rule_id": "REG_001",
+      "name": "Regulatory Compliance",
+      "description": "Check for regulatory compliance keywords",
+      "category": "regulatory",
+      "severity": "high",
+      "keywords": [
+        "gdpr",
+        "hipaa",
+        "sox",
+        "pci-dss"
+      ],
+      "enabled": true
+    }
+  ]
+}

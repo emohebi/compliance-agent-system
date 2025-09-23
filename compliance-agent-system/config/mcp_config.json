@@ -1,0 +1,70 @@
+{
+  "mcp_servers": {
+    "compliance": {
+      "enabled": true,
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_servers/compliance_mcp_server.py"],
+      "env": {},
+      "description": "Compliance checking and validation tools"
+    },
+    "knowledge_base": {
+      "enabled": true,
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_servers/kb_mcp_server.py"],
+      "env": {
+        "AWS_REGION": "${AWS_REGION}",
+        "BEDROCK_KNOWLEDGE_BASE_ID": "${BEDROCK_KNOWLEDGE_BASE_ID}"
+      },
+      "description": "AWS Bedrock Knowledge Base operations"
+    },
+    "analytics": {
+      "enabled": false,
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_servers/analytics_mcp_server.py"],
+      "env": {},
+      "description": "Analytics and reporting tools"
+    },
+    "notifications": {
+      "enabled": false,
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_servers/notification_mcp_server.py"],
+      "env": {},
+      "description": "Notification and alerting tools"
+    },
+    "external_api": {
+      "enabled": false,
+      "type": "http",
+      "url": "http://localhost:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer ${API_TOKEN}"
+      },
+      "description": "External API MCP server"
+    }
+  },
+  "workflows": {
+    "full_compliance_audit": {
+      "description": "Complete compliance audit workflow",
+      "required_servers": ["compliance", "knowledge_base"],
+      "optional_servers": ["analytics", "notifications"],
+      "timeout": 300,
+      "retry_count": 3
+    },
+    "quick_scan": {
+      "description": "Quick compliance scan",
+      "required_servers": ["compliance"],
+      "optional_servers": [],
+      "timeout": 60,
+      "retry_count": 1
+    }
+  },
+  "server_health_check": {
+    "enabled": true,
+    "interval": 60,
+    "timeout": 10,
+    "restart_on_failure": true
+  }
+}

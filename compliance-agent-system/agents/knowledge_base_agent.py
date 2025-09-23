@@ -6,6 +6,7 @@ from strands import Agent
 from strands.models import BedrockModel
 from config.settings import settings
 from tools.knowledge_base_tools import kb_tools
+from models.document_models import Document, DocumentBatch, DocumentSearchResult, DocumentSummary
 
 logger = logging.getLogger(__name__)
 
@@ -46,37 +47,32 @@ class KnowledgeBaseAgent:
         max_results: int = 10,
         min_score: float = 0.4
     ) -> Dict[str, Any]:
-        """
-        Retrieve documents from the knowledge base.
-        
-        Args:
-            query: Search query
-            max_results: Maximum results to return
-            min_score: Minimum relevance score
-            
-        Returns:
-            Retrieved documents and metadata
-        """
+        """Retrieve documents from the knowledge base."""
         logger.info(f"Retrieving documents for query: {query}")
         
         prompt = f"""
-        Retrieve relevant documents for the following query:
-        Query: {query}
+        Search for and retrieve documents related to: {query}
         
-        Parameters:
-        - Maximum results: {max_results}
-        - Minimum score: {min_score}
-        
-        Provide a summary of the most relevant findings.
+        Requirements:
+        - Find up to {max_results} most relevant documents
+        - Focus on documents with relevance score above {min_score}
+        - Provide a comprehensive summary of findings
+        - Identify key insights from the documents
         """
         
-        response = self.agent(prompt)
+        result = self.agent.structured_output(
+            DocumentSearchResult,
+            prompt
+        )
+        
         return {
             'query': query,
-            'response': response.content,
-            'usage': response.usage
+            'response': result.summary,
+            'documents': result.relevant_documents,
+            'insights': result.key_insights,
+            'total': result.total_found
         }
-    
+        
     def store_document(
         self,
         content: str,
@@ -106,7 +102,7 @@ class KnowledgeBaseAgent:
         response = self.agent(prompt)
         return {
             'status': 'stored',
-            'response': response.content
+            'response': response.message
         }
     
     def search_and_summarize(
@@ -114,32 +110,42 @@ class KnowledgeBaseAgent:
         topic: str,
         context: Optional[str] = None
     ) -> str:
-        """
-        Search for a topic and provide a comprehensive summary.
-        
-        Args:
-            topic: Topic to search for
-            context: Additional context for the search
-            
-        Returns:
-            Summarized findings
-        """
+        """Search for a topic and provide a comprehensive summary."""
         logger.info(f"Searching and summarizing topic: {topic}")
         
         prompt = f"""
         Search the knowledge base for information about: {topic}
-        
         {f'Additional context: {context}' if context else ''}
         
-        Provide a comprehensive summary of all relevant findings, including:
-        1. Key information points
-        2. Document sources
-        3. Confidence scores
-        4. Any gaps in information
+        Provide a comprehensive analysis including:
+        1. Main topics and themes
+        2. Key points and findings
+        3. Any gaps in available information
+        4. Confidence level in the summary
         """
         
-        response = self.agent(prompt)
-        return response.content
+        summary = self.agent.structured_output(
+            DocumentSummary,
+            prompt
+        )
+        
+        # Format the summary
+        formatted_summary = f"""
+            ## Summary: {topic}
+
+            ### Main Topics
+            {chr(10).join(f'- {t}' for t in summary.main_topics)}
+
+            ### Key Points
+            {chr(10).join(f'- {p}' for p in summary.key_points)}
+
+            ### Information Gaps
+            {chr(10).join(f'- {g}' for g in summary.gaps) if summary.gaps else 'None identified'}
+
+            **Confidence Score:** {summary.confidence_score:.1%}
+            """
+        
+        return formatted_summary
     
     def batch_retrieve(
         self,

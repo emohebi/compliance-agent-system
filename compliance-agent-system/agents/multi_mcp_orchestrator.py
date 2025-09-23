@@ -252,7 +252,7 @@ class MultiMCPOrchestrator:
                 response = compliance_agent(prompt)
                 results['assessments'].append({
                     'regulation': regulation,
-                    'assessment': response.content
+                    'assessment': response.message
                 })
         
         return results

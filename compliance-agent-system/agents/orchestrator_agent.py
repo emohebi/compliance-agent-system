@@ -194,18 +194,20 @@ class OrchestratorAgent:
         else:
             # Default: Use the orchestrator agent to handle the request
             response = self.agent(user_request)
-            return response.content
+            return response.message
     
     def _generate_workflow_summary(
         self,
         workflow_results: Dict[str, Any]
     ) -> str:
         """Generate a summary of workflow results."""
+        import json
+
         prompt = f"""
         Summarize the following workflow results in a clear, concise manner:
-        
-        Workflow Results: {workflow_results}
-        
+
+        Workflow Results: {json.dumps(workflow_results, indent=2, default=str)}
+
         Include:
         1. What was accomplished
         2. Key findings
@@ -214,7 +216,7 @@ class OrchestratorAgent:
         """
         
         response = self.agent(prompt)
-        return response.content
+        return response.message
     
     def _format_results(
         self,
@@ -234,4 +236,4 @@ class OrchestratorAgent:
         """
         
         response = self.agent(prompt)
-        return response.content
+        return response.message

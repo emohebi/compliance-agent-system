@@ -112,8 +112,8 @@ class MCPEnhancedAgent:
             
             return {
                 'query': query,
-                'analysis': response.content,
-                'usage': response.usage
+                'analysis': response.message,
+                'usage': response.metrics.accumulated_usage if hasattr(response, 'metrics') else {}
             }
     
     def batch_scan_pii(
@@ -148,7 +148,7 @@ class MCPEnhancedAgent:
                 response = self.agent(prompt)
                 results.append({
                     'document_index': i,
-                    'scan_results': response.content
+                    'scan_results': response.message
                 })
         
         return results
@@ -187,7 +187,7 @@ class MCPEnhancedAgent:
             
             return {
                 'regulations_checked': regulations,
-                'validation_results': response.content
+                'validation_results': response.message
             }
     
     def generate_executive_report(
@@ -225,4 +225,4 @@ class MCPEnhancedAgent:
             """
             
             response = self.agent(prompt)
-            return response.content
+            return response.message

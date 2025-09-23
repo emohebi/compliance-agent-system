@@ -33,7 +33,7 @@ class KnowledgeBaseTools:
         self,
         query: str,
         max_results: int = 10,
-        min_score: float = 0.4
+        min_score: float = 0.0
     ) -> Dict[str, Any]:
         """
         Retrieve relevant documents from the knowledge base.

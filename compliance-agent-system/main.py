@@ -553,7 +553,7 @@ def check_environment():
     issues = []
     
     # Check .env file
-    if not Path('.env').exists():
+    if not (Path(__file__).parent / '.env').is_file():
         issues.append("No .env file found. Copy .env.example to .env and configure it.")
     
     # Check critical settings

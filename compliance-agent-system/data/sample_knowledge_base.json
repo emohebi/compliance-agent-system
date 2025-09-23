@@ -5,7 +5,7 @@
   "documents": [
     {
       "id": "doc_001",
-      "content": "Data Protection Policy: All customer personal data must be encrypted at rest and in transit. Access to customer data should be restricted to authorized personnel only. Regular audits must be conducted to ensure compliance with GDPR and other data protection regulations. Data retention policies should be clearly defined and enforced.",
+      "content": "My personal information are sara.hassani@gmail.com, +61412345678, 123-45-6789. According to GDPR regulations, personal data must be processed lawfully, fairly, and transparently. Organizations must implement appropriate technical and organizational measures to ensure a level of security appropriate to the risk, including encryption of personal data. Data subjects have the right to access their data, rectify inaccuracies, and request deletion under certain conditions.",
       "metadata": {
         "category": "policy",
         "type": "data_protection",

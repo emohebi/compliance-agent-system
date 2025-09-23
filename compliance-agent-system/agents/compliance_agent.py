@@ -6,7 +6,8 @@ from strands import Agent
 from strands.models import BedrockModel
 from config.settings import settings
 from tools.compliance_tools import compliance_tools
-from models.compliance_rules import ComplianceResult
+from models.compliance_rules import ComplianceResult, BatchComplianceResult, ComplianceReport, RemediationPlan, AgentComplianceResult
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -27,19 +28,11 @@ class ComplianceAgent:
                 compliance_tools.generate_compliance_report
             ],
             system_prompt="""You are a Compliance specialist agent.
-            Your responsibilities include:
-            1. Checking documents for compliance violations
-            2. Identifying potential risks and issues
-            3. Generating detailed compliance reports
-            4. Providing remediation recommendations
-            
-            When checking compliance:
-            - Be thorough and systematic
-            - Check for PII, security risks, and regulatory requirements
-            - Provide clear explanations for violations
-            - Suggest specific remediation steps
-            
-            Always maintain high standards for data protection and security."""
+            When using structured output:
+            - Always provide is_compliant as boolean (true/false)
+            - Always provide score as float between 0.0 and 1.0
+            - Provide violations and warnings as lists of strings
+            """
         )
     
     def check_document(
@@ -47,144 +40,195 @@ class ComplianceAgent:
         document_content: str,
         document_metadata: Optional[Dict[str, Any]] = None
     ) -> ComplianceResult:
-        """
-        Check a single document for compliance.
-        
-        Args:
-            document_content: Document content to check
-            document_metadata: Optional document metadata
-            
-        Returns:
-            Compliance check results
-        """
+        """Check a single document for compliance."""
         logger.info("Checking document compliance")
         
         prompt = f"""
-        Perform a comprehensive compliance check on the following document:
+        Check this document for compliance violations:
         
-        Document Content: {document_content[:1000]}...
-        {f'Metadata: {document_metadata}' if document_metadata else ''}
+        Document: {document_content[:1000]}...
         
-        Check for:
-        1. PII (Personal Identifiable Information)
-        2. Security vulnerabilities
-        3. Regulatory compliance issues
-        4. Data protection concerns
+        Analyze for:
+        1. PII (SSN format: XXX-XX-XXXX, emails, credit cards)  
+        2. Security issues (passwords, API keys, tokens)
+        3. Regulatory keywords (GDPR, HIPAA, PCI-DSS)
         
-        Provide detailed findings and recommendations.
+        Determine:
+        - is_compliant: true if no major issues, false if violations found
+        - score: 0.0 (many violations) to 1.0 (no violations)
+        - violations: list each violation found
+        - warnings: list potential issues
         """
         
-        response = self.agent(prompt)
-        
-        # Also run the tool directly for structured results
-        tool_result = compliance_tools.check_document_compliance(
-            document_content, 
-            document_metadata
+        # Get simplified result from agent
+        agent_result = self.agent.structured_output(
+            AgentComplianceResult,
+            prompt
         )
         
-        return tool_result
+        # Convert to full ComplianceResult
+        return ComplianceResult(
+            is_compliant=agent_result.is_compliant,
+            score=agent_result.score,
+            violations=[
+                {
+                    "rule_name": "AI Detection",
+                    "description": v,
+                    "severity": "high",
+                    "category": "compliance"
+                }
+                for v in agent_result.violations
+            ],
+            warnings=[
+                {
+                    "rule_name": "AI Detection",
+                    "description": w,
+                    "severity": "medium",
+                    "category": "warning"
+                }
+                for w in agent_result.warnings
+            ],
+            checked_at=datetime.now().isoformat(),
+            document_metadata=document_metadata
+        )
     
     def check_batch(
         self,
         documents: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        """
-        Check multiple documents for compliance.
-        
-        Args:
-            documents: List of documents to check
-            
-        Returns:
-            Batch compliance results
-        """
+        """Check multiple documents for compliance."""
         logger.info(f"Checking batch of {len(documents)} documents")
+        
+        # Prepare documents summary for agent
+        docs_summary = "\n".join([
+            f"Document {i+1}: {doc.get('content', '')[:200]}..."
+            for i, doc in enumerate(documents[:10])  # Limit to first 10 for prompt
+        ])
         
         prompt = f"""
         Perform batch compliance checking on {len(documents)} documents.
         
-        Analyze each document for compliance violations and provide:
-        1. Overall compliance statistics
+        Sample of documents:
+        {docs_summary}
+        
+        Analyze all documents and provide:
+        1. Total count and compliance statistics
         2. Common violation patterns
-        3. Risk assessment
-        4. Prioritized remediation plan
+        3. Overall compliance rate
+        4. Summary of key findings
         """
         
-        response = self.agent(prompt)
-        
-        # Get structured results from tool
-        tool_result = compliance_tools.check_batch_compliance(documents)
+        # Get structured batch result
+        batch_result = self.agent.structured_output(
+            BatchComplianceResult,
+            prompt
+        )
         
         return {
-            'analysis': response.content,
-            'results': tool_result
+            'analysis': batch_result.summary,
+            'results': batch_result.dict()
         }
-    
+        
     def generate_report(
         self,
         compliance_results: List[ComplianceResult]
     ) -> str:
-        """
-        Generate a detailed compliance report.
-        
-        Args:
-            compliance_results: List of compliance check results
-            
-        Returns:
-            Formatted compliance report
-        """
+        """Generate a detailed compliance report."""
         logger.info("Generating compliance report")
         
-        # Get basic report from tool
-        basic_report = compliance_tools.generate_compliance_report(compliance_results)
+        # Prepare summary of results
+        results_summary = {
+            'total': len(compliance_results),
+            'compliant': sum(1 for r in compliance_results if r.is_compliant),
+            'average_score': sum(r.score for r in compliance_results) / len(compliance_results) if compliance_results else 0
+        }
         
-        # Enhance with agent analysis
         prompt = f"""
-        Based on the following compliance check results, generate an executive summary:
+        Generate an executive compliance report based on these results:
         
-        {basic_report}
+        Total documents checked: {results_summary['total']}
+        Compliant documents: {results_summary['compliant']}
+        Average compliance score: {results_summary['average_score']:.2f}
         
-        Include:
+        Provide:
         1. Executive summary
         2. Key risks and their business impact
         3. Recommended immediate actions
         4. Long-term compliance strategy
         """
         
-        response = self.agent(prompt)
+        # Get structured report
+        report = self.agent.structured_output(
+            ComplianceReport,
+            prompt
+        )
         
-        # Combine reports
-        final_report = f"{response.content}\n\n---\n\n{basic_report}"
+        # Format as markdown report
+        final_report = f"""
+    # Compliance Report
+
+    ## Executive Summary
+    {report.executive_summary}
+
+    ## Statistics
+    - Total Documents: {report.total_documents}
+    - Compliance Rate: {report.compliance_rate:.1%}
+
+    ## Key Risks
+    {chr(10).join(f'- {risk}' for risk in report.key_risks)}
+
+    ## Immediate Actions Required
+    {chr(10).join(f'1. {action}' for i, action in enumerate(report.immediate_actions, 1))}
+
+    ## Long-Term Strategy
+    {report.long_term_strategy}
+
+    ---
+    Generated: {datetime.now().isoformat()}
+    """
+        
         return final_report
     
     def suggest_remediation(
         self,
         violations: List[Dict[str, Any]]
     ) -> str:
-        """
-        Suggest remediation steps for violations.
-        
-        Args:
-            violations: List of compliance violations
-            
-        Returns:
-            Remediation recommendations
-        """
+        """Suggest remediation steps for violations."""
         logger.info("Generating remediation suggestions")
         
+        violations_summary = "\n".join([
+            f"- {v.get('rule_name', 'Unknown')}: {v.get('description', '')}"
+            for v in violations[:20]  # Limit to prevent token overflow
+        ])
+        
         prompt = f"""
-        Analyze the following compliance violations and provide remediation steps:
+        Analyze these compliance violations and provide a remediation plan:
         
         Violations:
-        {violations}
+        {violations_summary}
         
-        For each violation, provide:
-        1. Specific remediation steps
-        2. Priority level
-        3. Estimated effort
-        4. Prevention measures
-        
-        Format as an actionable plan.
+        Create an actionable remediation plan with:
+        1. Specific priority actions with effort estimates
+        2. Prevention measures for the future
+        3. Realistic timeline for implementation
         """
         
-        response = self.agent(prompt)
-        return response.content
+        plan = self.agent.structured_output(
+            RemediationPlan,
+            prompt
+        )
+        
+        # Format as actionable text
+        formatted_plan = "## Remediation Plan\n\n"
+        formatted_plan += "### Priority Actions\n"
+        for action in plan.priority_actions:
+            formatted_plan += f"- **{action.get('priority', 'Medium')}**: {action.get('action', '')}\n"
+            formatted_plan += f"  *Effort: {action.get('effort', 'Unknown')}*\n"
+        
+        formatted_plan += "\n### Prevention Measures\n"
+        for measure in plan.prevention_measures:
+            formatted_plan += f"- {measure}\n"
+        
+        formatted_plan += f"\n### Timeline\n{plan.estimated_timeline}"
+        
+        return formatted_plan

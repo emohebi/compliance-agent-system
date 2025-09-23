@@ -110,7 +110,7 @@ def main():
     # Initialize knowledge base
     kb = LocalKnowledgeBase(settings.LOCAL_KB_FILE)
     args.command = 'load-sample'
-    args.file = './data/sample_knowledge_base.json'
+    args.file = str(Path(__file__).parent.parent / 'data/sample_knowledge_base.json')
     if args.command == 'load-sample':
         load_sample_data(kb, args.file)
     elif args.command == 'search':

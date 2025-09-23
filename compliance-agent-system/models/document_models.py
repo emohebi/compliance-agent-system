@@ -4,6 +4,23 @@ from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from datetime import datetime
 
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any
+
+class DocumentSearchResult(BaseModel):
+    """Model for document search results."""
+    relevant_documents: List[str] = Field(description="List of relevant document contents")
+    total_found: int = Field(description="Total number of documents found")
+    summary: str = Field(description="Summary of findings")
+    key_insights: List[str] = Field(description="Key insights from the documents")
+
+class DocumentSummary(BaseModel):
+    """Model for document summary."""
+    main_topics: List[str] = Field(description="Main topics covered")
+    key_points: List[str] = Field(description="Key points from the documents")
+    gaps: List[str] = Field(description="Information gaps identified")
+    confidence_score: float = Field(description="Confidence in the summary (0.0-1.0)")
+
 class Document(BaseModel):
     """Model for a document."""
     id: str = Field(..., description="Document ID")

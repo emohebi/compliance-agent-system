@@ -14,27 +14,31 @@ else:
     print("No .env file found, using system environment variables")
     raise FileNotFoundError(".env file not found in the project root")
 
- # Step 1: Initialize with your profile
-profile_name = "myprofile"  # Replace with your profile name
+# Step 1: Initialize with your profile
+profile_name = os.getenv("AWS_PROFILE", "myprofile")  # Get from env or use default
 token_manager = AWSSessionTokenManager(profile_name)
 
 # Step 2: Verify profile works
 if not token_manager.verify_profile():
     raise ValueError(f"Profile '{profile_name}' verification failed")
 
-# Step 3: Get session token (choose one method)
+# Step 3: Get session token duration from environment or use default
+session_duration = int(os.getenv("AWS_SESSION_DURATION", "3600"))
 
 # Method A: Basic session token (no MFA)
-credentials = token_manager.get_session_token(duration_seconds=3600)
+credentials = token_manager.get_session_token(duration_seconds=session_duration)
 
 # Method B: Session token with MFA (uncomment if you have MFA)
-# mfa_serial = "arn:aws:iam::123456789012:mfa/yourusername"
-# mfa_code = input("Enter MFA code: ")
-# credentials = token_manager.get_session_token(
-#     duration_seconds=3600,
-#     mfa_serial=mfa_serial,
-#     mfa_token=mfa_code
-# )
+# mfa_serial = os.getenv("AWS_MFA_SERIAL")  # Get from environment
+# if mfa_serial:
+#     mfa_code = input("Enter MFA code: ")
+#     credentials = token_manager.get_session_token(
+#         duration_seconds=session_duration,
+#         mfa_serial=mfa_serial,
+#         mfa_token=mfa_code
+#     )
+# else:
+#     credentials = token_manager.get_session_token(duration_seconds=session_duration)
 
 if not credentials:
     raise ValueError("Failed to obtain temporary AWS session credentials")
@@ -79,20 +83,34 @@ class Settings:
     
     @classmethod
     def get_bedrock_config(cls) -> Dict[str, Any]:
-        """Get Bedrock model configuration."""
+        """Get Bedrock model configuration with proper AWS credentials."""
+        import boto3
+        
         config = {
             "temperature": cls.AGENT_TEMPERATURE,
             "max_tokens": cls.AGENT_MAX_TOKENS,
             "streaming": True
         }
         
-        # Only add AWS-specific config if not using local KB or if AWS is configured
-        if not cls.USE_LOCAL_KNOWLEDGE_BASE or cls.AWS_ACCESS_KEY_ID:
+        # Create a boto3 session with temporary credentials if available
+        if cls.AWS_ACCESS_KEY_ID and cls.AWS_SECRET_ACCESS_KEY:
+            # Create boto3 session with temporary credentials
+            boto_session = boto3.Session(
+                aws_access_key_id=cls.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=cls.AWS_SECRET_ACCESS_KEY,
+                aws_session_token=cls.AWS_SESSION_TOKEN,  # Important for temporary credentials!
+                region_name=cls.AWS_REGION
+            )
+            
             config.update({
                 "model_id": cls.BEDROCK_MODEL_ID,
                 "cache_prompt": cls.BEDROCK_CACHE_PROMPT,
-                "region_name": cls.AWS_REGION,
+                "boto_session": boto_session  # Pass the session, not individual credentials!
             })
+        elif not cls.USE_LOCAL_KNOWLEDGE_BASE:
+            # If AWS mode but no credentials, this is a problem
+            print("WARNING: AWS mode selected but no AWS credentials available!")
+            raise ValueError("AWS credentials required for Bedrock model when not using local KB mode")
         
         return config
     
@@ -111,6 +129,9 @@ class Settings:
             # AWS mode - need credentials and KB ID
             if not cls.BEDROCK_KNOWLEDGE_BASE_ID:
                 print("Warning: AWS mode selected but BEDROCK_KNOWLEDGE_BASE_ID not set")
+                return False
+            if not cls.AWS_ACCESS_KEY_ID or not cls.AWS_SECRET_ACCESS_KEY:
+                print("Warning: AWS mode selected but AWS credentials not available")
                 return False
             return True
 

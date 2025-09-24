@@ -505,38 +505,41 @@ class ComplianceAgentCLI:
         # Main loop
         while True:
             try:
-                self.print_menu()
                 
-                choice = input(f"{Fore.YELLOW}Enter your choice (0-9): {Style.RESET_ALL}").strip()
+                self.interactive_chat()
                 
-                if choice == '0':
-                    print(f"\n{Fore.YELLOW}Thank you for using Compliance Agent System!")
-                    print(f"{Fore.CYAN}Goodbye! 👋\n")
-                    break
-                elif choice == '1':
-                    self.search_knowledge_base()
-                elif choice == '2':
-                    self.check_document_compliance()
-                elif choice == '3':
-                    self.run_compliance_workflow()
-                elif choice == '4':
-                    self.add_document_to_kb()
-                elif choice == '5':
-                    self.view_kb_statistics()
-                elif choice == '6':
-                    self.interactive_chat()
-                elif choice == '7':
-                    self.batch_compliance_check()
-                elif choice == '8':
-                    self.view_session_history()
-                elif choice == '9':
-                    self.view_settings()
-                else:
-                    print(f"{Fore.RED}Invalid choice. Please enter a number between 0-9.")
+                # self.print_menu()
                 
-                # Pause before showing menu again
-                if choice in '123456789':
-                    input(f"\n{Fore.YELLOW}Press Enter to continue...")
+                # choice = input(f"{Fore.YELLOW}Enter your choice (0-9): {Style.RESET_ALL}").strip()
+                
+                # if choice == '0':
+                #     print(f"\n{Fore.YELLOW}Thank you for using Compliance Agent System!")
+                #     print(f"{Fore.CYAN}Goodbye! 👋\n")
+                #     break
+                # elif choice == '1':
+                #     self.search_knowledge_base()
+                # elif choice == '2':
+                #     self.check_document_compliance()
+                # elif choice == '3':
+                #     self.run_compliance_workflow()
+                # elif choice == '4':
+                #     self.add_document_to_kb()
+                # elif choice == '5':
+                #     self.view_kb_statistics()
+                # elif choice == '6':
+                #     self.interactive_chat()
+                # elif choice == '7':
+                #     self.batch_compliance_check()
+                # elif choice == '8':
+                #     self.view_session_history()
+                # elif choice == '9':
+                #     self.view_settings()
+                # else:
+                #     print(f"{Fore.RED}Invalid choice. Please enter a number between 0-9.")
+                
+                # # Pause before showing menu again
+                # if choice in '123456789':
+                #     input(f"\n{Fore.YELLOW}Press Enter to continue...")
                     
             except KeyboardInterrupt:
                 print(f"\n{Fore.YELLOW}Use '0' to exit properly.")

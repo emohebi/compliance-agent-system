@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance Agent System - Advanced Chat Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #06b6d4;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border-color: #475569;
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-header .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .menu-section {
+            margin-bottom: 24px;
+        }
+
+        .menu-section h3 {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            letter-spacing: 0.05em;
+        }
+
+        .menu-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-primary);
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .menu-item:hover {
+            background: var(--bg-tertiary);
+            transform: translateX(4px);
+        }
+
+        .menu-item.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .chat-header {
+            padding: 20px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .agent-badge {
+            padding: 4px 12px;
+            background: var(--primary-color);
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Messages Container */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: var(--gradient-1);
+        }
+
+        .message.agent .message-avatar {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        }
+
+        .message-content {
+            flex: 1;
+            max-width: 70%;
+        }
+
+        .message.user .message-content {
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .message.user .message-bubble {
+            background: var(--gradient-1);
+            border: none;
+        }
+
+        /* Status Messages - New Streaming Styles */
+        .status-message {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin: 8px 0;
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--info-color);
+            border-radius: 8px;
+            animation: slideIn 0.3s ease;
+            font-size: 14px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .status-message.agent-start {
+            border-left-color: var(--primary-color);
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.1), transparent);
+        }
+
+        .status-message.tool-use {
+            border-left-color: var(--warning-color);
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), transparent);
+        }
+
+        .status-message.thinking {
+            border-left-color: var(--info-color);
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1), transparent);
+        }
+
+        .status-message.step-complete {
+            border-left-color: var(--secondary-color);
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent);
+        }
+
+        .status-message.error {
+            border-left-color: var(--danger-color);
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.1), transparent);
+        }
+
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .status-text {
+            flex: 1;
+        }
+
+        .status-timestamp {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Progress Bar for Status Messages */
+        .progress-container {
+            margin-top: 8px;
+            padding: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        /* Agent Activity Cards */
+        .agent-card {
+            padding: 12px;
+            margin: 8px 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .agent-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .agent-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        }
+
+        .agent-name {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .agent-task {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .tool-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 4px 4px 4px 0;
+        }
+
+        .tool-badge.active {
+            background: linear-gradient(135deg, var(--warning-color), var(--secondary-color));
+            animation: glow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(245, 158, 11, 0.5); }
+            to { box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { 
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            30% { 
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        /* Input Area */
+        .input-container {
+            padding: 20px 24px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            flex: 1;
+            min-height: 44px;
+            max-height: 120px;
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary-color);
+        }
+
+        .send-button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action {
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-action:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--text-secondary);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Connection Status Bar */
+        .connection-status {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 4px;
+            background: var(--secondary-color);
+            color: white;
+            text-align: center;
+            font-size: 12px;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .connection-status.visible {
+            transform: translateY(0);
+        }
+
+        .connection-status.error {
+            background: var(--danger-color);
+        }
+
+        .connection-status.connecting {
+            background: var(--warning-color);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <div id="connection-status" class="connection-status">Connecting to server...</div>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // API Configuration
+        const API_URL = 'http://localhost:8000';
+
+        function ComplianceAgentChat() {
+            const [messages, setMessages] = useState([]);
+            const [inputValue, setInputValue] = useState('');
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [activeMenu, setActiveMenu] = useState('chat');
+            const [socket, setSocket] = useState(null);
+            const [sessionId, setSessionId] = useState('session_' + Date.now());
+            const [connectionStatus, setConnectionStatus] = useState('connecting');
+            const messagesEndRef = useRef(null);
+            const inputRef = useRef(null);
+            const eventSourceRef = useRef(null);
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            };
+
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
+            useEffect(() => {
+                // Initialize Socket.IO connection
+                const newSocket = io(API_URL, {
+                    transports: ['websocket'],
+                    reconnection: true,
+                    reconnectionAttempts: 5
+                });
+
+                newSocket.on('connect', () => {
+                    console.log('Connected to server');
+                    setConnectionStatus('connected');
+                    showConnectionStatus('Connected to server', 'success');
+                    newSocket.emit('join_session', { session_id: sessionId });
+                    
+                    // Add initial greeting
+                    addMessage({
+                        type: 'agent',
+                        text: `🎯 **Welcome to Compliance Agent System**\n\nI'm your AI compliance assistant with real-time processing capabilities. I can help you with:\n\n• 📄 Document compliance checking\n• 🔍 Knowledge base searches\n• 📊 Compliance reports and analytics\n• 🔤 Keyword compliance verification\n• ⚡ Automated compliance workflows\n\nYou'll see real-time updates as I work, including which agents and tools are being used. How can I assist you today?`,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+
+                newSocket.on('disconnect', () => {
+                    console.log('Disconnected from server');
+                    setConnectionStatus('disconnected');
+                    showConnectionStatus('Disconnected from server', 'error');
+                });
+
+                newSocket.on('status_update', (data) => {
+                    addStatusMessage(data);
+                });
+
+                newSocket.on('chat_response', (data) => {
+                    handleStreamingResponse(data);
+                });
+
+                setSocket(newSocket);
+
+                return () => {
+                    newSocket.close();
+                    if (eventSourceRef.current) {
+                        eventSourceRef.current.close();
+                    }
+                };
+            }, []);
+
+            const showConnectionStatus = (message, type) => {
+                const statusBar = document.getElementById('connection-status');
+                statusBar.textContent = message;
+                statusBar.className = `connection-status visible ${type === 'error' ? 'error' : type === 'connecting' ? 'connecting' : ''}`;
+                setTimeout(() => {
+                    statusBar.classList.remove('visible');
+                }, 3000);
+            };
+
+            const menuItems = [
+                { id: 'chat', name: 'Interactive Chat', icon: '💬' }
+            ];
+
+            const quickActions = [
+                'Search for GDPR policies',
+                'Check for "policy" keyword as compliance',
+                'Check if documents contain "privacy"',
+                'Check if all documents have "security" and "compliance"',
+                'Run compliance workflow',
+                'Show KB statistics'
+            ];
+
+            const addMessage = (message) => {
+                setMessages(prev => [...prev, { ...message, id: Date.now() + Math.random() }]);
+            };
+
+            const addStatusMessage = (status) => {
+                const statusMessage = {
+                    id: Date.now() + Math.random(),
+                    type: 'status',
+                    statusType: status.type,
+                    content: status,
+                    timestamp: status.timestamp || new Date().toISOString()
+                };
+                setMessages(prev => [...prev, statusMessage]);
+            };
+
+            const handleStreamingResponse = (data) => {
+                if (data.type === 'final') {
+                    // Final response
+                    addMessage({
+                        type: 'agent',
+                        text: data.response,
+                        data: data.data,
+                        timestamp: new Date().toISOString()
+                    });
+                    setIsProcessing(false);
+                } else if (data.type === 'status') {
+                    // Status update
+                    addStatusMessage(data);
+                }
+            };
+
+            const handleSendMessage = async () => {
+                if (!inputValue.trim() || isProcessing) return;
+
+                const userMessage = inputValue;
+                setInputValue('');
+                setIsProcessing(true);
+
+                // Add user message
+                addMessage({
+                    type: 'user',
+                    text: userMessage,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Use Server-Sent Events for streaming
+                try {
+                    const response = await fetch(`${API_URL}/api/chat/stream`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: userMessage,
+                            session_id: sessionId,
+                            context: activeMenu
+                        })
+                    });
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const text = decoder.decode(value);
+                        const lines = text.split('\n');
+                        
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+                                    handleStreamingResponse(data);
+                                } catch (e) {
+                                    console.error('Error parsing SSE data:', e);
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    addMessage({
+                        type: 'agent',
+                        text: `❌ Error: ${error.message}\n\nPlease ensure the backend server is running on ${API_URL}`,
+                        timestamp: new Date().toISOString()
+                    });
+                    setIsProcessing(false);
+                }
+            };
+
+            const handleQuickAction = (action) => {
+                setInputValue(action);
+                inputRef.current?.focus();
+            };
+
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                }
+            };
+
+            const renderMessage = (message) => {
+                if (message.type === 'status') {
+                    return (
+                        <div key={message.id} className={`status-message ${message.statusType}`}>
+                            <div className="status-icon">
+                                {message.statusType === 'agent_start' && '🤖'}
+                                {message.statusType === 'tool_use' && '🔧'}
+                                {message.statusType === 'thinking' && '💭'}
+                                {message.statusType === 'step_complete' && '✓'}
+                                {message.statusType === 'progress' && '📊'}
+                                {message.statusType === 'error' && '❌'}
+                            </div>
+                            <div className="status-text">
+                                {message.content.message}
+                                {message.content.tool && (
+                                    <span className="tool-badge active">
+                                        {message.content.tool}
+                                    </span>
+                                )}
+                                {message.content.percentage !== undefined && (
+                                    <div className="progress-container">
+                                        <div className="progress-header">
+                                            <span>{message.content.description}</span>
+                                            <span>{message.content.percentage.toFixed(0)}%</span>
+                                        </div>
+                                        <div className="progress-bar">
+                                            <div 
+                                                className="progress-fill" 
+                                                style={{ width: `${message.content.percentage}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="status-timestamp">
+                                {new Date(message.timestamp).toLocaleTimeString()}
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div key={message.id} className={`message ${message.type}`}>
+                        <div className="message-avatar">
+                            {message.type === 'user' ? 'U' : 'AI'}
+                        </div>
+                        <div className="message-content">
+                            <div className="message-bubble">
+                                {formatMessage(message.text)}
+                                {message.data && message.data.compliance_score !== undefined && (
+                                    <div className="progress-container" style={{ marginTop: '12px' }}>
+                                        <div className="progress-header">
+                                            <span>Compliance Score</span>
+                                            <span>{(message.data.compliance_score * 100).toFixed(1)}%</span>
+                                        </div>
+                                        <div className="progress-bar">
+                                            <div 
+                                                className="progress-fill" 
+                                                style={{ width: `${message.data.compliance_score * 100}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const formatMessage = (text) => {
+                return text.split('\n').map((line, i) => {
+                    if (line.startsWith('**') && line.endsWith('**')) {
+                        return <h4 key={i} style={{ color: '#3b82f6', margin: '8px 0' }}>{line.replace(/\*\*/g, '')}</h4>;
+                    }
+                    if (line.startsWith('•') || line.startsWith('-')) {
+                        return <li key={i} style={{ marginLeft: '20px', listStyle: 'none' }}>{line}</li>;
+                    }
+                    if (/^\d+\./.test(line)) {
+                        return <li key={i} style={{ marginLeft: '20px' }}>{line}</li>;
+                    }
+                    return <p key={i} style={{ margin: '4px 0' }}>{line || '\u00A0'}</p>;
+                });
+            };
+
+            return (
+                <div className="app-container">
+                    {/* Sidebar */}
+                    <div className="sidebar">
+                        <div className="sidebar-header">
+                            <h1>Compliance Agent System</h1>
+                            <div className="status">
+                                <div className="status-indicator"></div>
+                                <span>{connectionStatus === 'connected' ? 'Connected' : 'Connecting...'}</span>
+                            </div>
+                        </div>
+                        <div className="sidebar-content">
+                            <div className="menu-section">
+                                <h3>Main Features</h3>
+                                {menuItems.map(item => (
+                                    <button
+                                        key={item.id}
+                                        className={`menu-item ${activeMenu === item.id ? 'active' : ''}`}
+                                        onClick={() => setActiveMenu(item.id)}
+                                    >
+                                        <span className="menu-icon">{item.icon}</span>
+                                        <span>{item.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="main-content">
+                        <div className="chat-header">
+                            <div className="chat-header-title">
+                                <h2></h2>
+                                <span className="agent-badge">Multi-Agent System</span>
+                            </div>
+                            <div className="chat-actions">
+                                <button 
+                                    className="action-button" 
+                                    onClick={() => setMessages([])}
+                                    style={{ padding: '8px 16px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', cursor: 'pointer' }}
+                                >
+                                    Clear Chat
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="messages-container">
+                            {messages.map(renderMessage)}
+                            {isProcessing && (
+                                <div className="message agent">
+                                    <div className="message-avatar">AI</div>
+                                    <div className="message-content">
+                                        <div className="message-bubble">
+                                            <div className="typing-indicator">
+                                                <div className="typing-dot"></div>
+                                                <div className="typing-dot"></div>
+                                                <div className="typing-dot"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        <div className="input-container">
+                            <div className="quick-actions">
+                                {quickActions.map((action, index) => (
+                                    <button
+                                        key={index}
+                                        className="quick-action"
+                                        onClick={() => handleQuickAction(action)}
+                                    >
+                                        {action}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="input-wrapper">
+                                <textarea
+                                    ref={inputRef}
+                                    className="input-field"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyPress={handleKeyPress}
+                                    placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
+                                    rows="1"
+                                />
+                                <button 
+                                    className="send-button"
+                                    onClick={handleSendMessage}
+                                    disabled={!inputValue.trim() || isProcessing}
+                                >
+                                    {isProcessing ? (
+                                        <>
+                                            <div className="loading-spinner"></div>
+                                            <span>Processing</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>Send</span>
+                                            <span>→</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the app
+        ReactDOM.render(<ComplianceAgentChat />, document.getElementById('root'));
+    </script>
+</body>
+</html>

@@ -209,7 +209,7 @@ class LocalKnowledgeBase:
             'query': query,
             'results': results,
             'total_results': len(results),
-            'search_method': 'Cosine similarity'
+            'search_method': '*'
         }
     
     def store(

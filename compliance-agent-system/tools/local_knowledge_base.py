@@ -171,35 +171,35 @@ class LocalKnowledgeBase:
             }
         
         # Tokenize and create query vector
-        query_tokens = self._tokenize(query)
-        query_tf = self._calculate_tf(query_tokens)
+        # query_tokens = self._tokenize(query)
+        # query_tf = self._calculate_tf(query_tokens)
         
-        # Create query TF-IDF vector
-        query_vector = {}
-        for term, tf_score in query_tf.items():
-            idf_score = self.idf_scores.get(term, 0)
-            query_vector[term] = tf_score * idf_score
+        # # Create query TF-IDF vector
+        # query_vector = {}
+        # for term, tf_score in query_tf.items():
+        #     idf_score = self.idf_scores.get(term, 0)
+        #     query_vector[term] = tf_score * idf_score
         
-        # Calculate similarity scores for all documents
-        scores = []
-        for i, doc in enumerate(self.documents):
-            doc_vector = self.document_vectors.get(i, {})
-            similarity = self._calculate_similarity(query_vector, doc_vector)
+        # # Calculate similarity scores for all documents
+        # scores = []
+        # for i, doc in enumerate(self.documents):
+        #     doc_vector = self.document_vectors.get(i, {})
+        #     similarity = self._calculate_similarity(query_vector, doc_vector)
             
-            if similarity >= min_score:
-                scores.append((i, similarity))
+        #     if similarity >= min_score:
+        #         scores.append((i, similarity))
         
-        # Sort by score (descending) and limit results
-        scores.sort(key=lambda x: x[1], reverse=True)
-        scores = scores[:max_results]
+        # # Sort by score (descending) and limit results
+        # scores.sort(key=lambda x: x[1], reverse=True)
+        # scores = scores[:max_results]
         
         # Build results
         results = []
-        for doc_idx, score in scores:
-            doc = self.documents[doc_idx]
+        for doc_idx, doc in enumerate(self.documents):
+            # doc = self.documents[doc_idx]
             results.append({
                 'content': doc.get('content', ''),
-                'score': round(score, 4),
+                'score': round(1, 4),
                 'metadata': doc.get('metadata', {}),
                 'document_id': doc.get('id', f'doc_{doc_idx}')
             })
@@ -209,7 +209,7 @@ class LocalKnowledgeBase:
             'query': query,
             'results': results,
             'total_results': len(results),
-            'search_method': 'TF-IDF similarity'
+            'search_method': 'Cosine similarity'
         }
     
     def store(

@@ -26,43 +26,45 @@ class KnowledgeBaseAgent:
                 kb_tools.store_in_knowledge_base,
                 kb_tools.list_knowledge_base_documents
             ],
-            system_prompt="""You are a Knowledge Base specialist agent.
-            Your role is to:
-            1. Retrieve relevant documents from the knowledge base
-            2. Store new documents when needed
-            3. Provide accurate information from stored documents
-            4. Maintain document organization and metadata
-            
-            When retrieving documents:
-            - Use semantic search to find the most relevant content
-            - Apply appropriate score thresholds
-            - Summarize findings clearly
-            
-            Always provide sources and confidence scores for retrieved information."""
-        )
+            system_prompt="""You are a Knowledge Base specialist.
+                IMPORTANT: You have access to these tools:
+                - retrieve_from_knowledge_base: Use this to search documents
+                - store_in_knowledge_base: Use this to store documents
+                - list_knowledge_base_documents: Use this to list documents
+                
+                Always use these tools when asked to search, store, or list documents.
+                """
+            )
     
-    def retrieve_documents(
-        self,
-        query: str,
-        max_results: int = 10,
-        min_score: float = 0.4
-    ) -> Dict[str, Any]:
-        """Retrieve documents from the knowledge base."""
+    def retrieve_documents(self, query: str, max_results: int = 10, min_score: float = 0.4) -> Dict[str, Any]:
         logger.info(f"Retrieving documents for query: {query}")
         
-        prompt = f"""
-        Search for and retrieve documents related to: {query}
+        # Step 1: Tool invocation
+        tool_prompt = f"""
+        Use the retrieve_from_knowledge_base tool with these exact parameters:
+        - query: "{query}"
+        - max_results: {max_results}
+        - min_score: {min_score}
         
-        Requirements:
-        - Find up to {max_results} most relevant documents
-        - Focus on documents with relevance score above {min_score}
-        - Provide a comprehensive summary of findings
-        - Identify key insights from the documents
+        Execute retrieve_from_knowledge_base tool now.
+        """
+        
+        tool_response = self.agent(tool_prompt)
+        
+        # Step 2: Format results (optional)
+        format_prompt = f"""
+        Based on these search results: {str(tool_response)}
+        
+        Provide:
+        - List of relevant document contents
+        - Total number found
+        - Summary of findings
+        - Key insights extracted
         """
         
         result = self.agent.structured_output(
             DocumentSearchResult,
-            prompt
+            format_prompt
         )
         
         return {
@@ -72,62 +74,58 @@ class KnowledgeBaseAgent:
             'insights': result.key_insights,
             'total': result.total_found
         }
-        
-    def store_document(
-        self,
-        content: str,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """
-        Store a document in the knowledge base.
-        
-        Args:
-            content: Document content
-            metadata: Document metadata
             
-        Returns:
-            Storage status
-        """
+    def store_document(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         logger.info("Storing document in knowledge base")
         
-        prompt = f"""
-        Store the following document in the knowledge base:
+        # Tool invocation only (no structured output needed)
+        tool_prompt = f"""
+        Use the store_in_knowledge_base tool to store this document.
         
-        Content: {content}
-        Metadata: {metadata}
+        Parameters:
+        - content: {content[:200]}...
+        - metadata: {metadata}
         
-        Ensure proper indexing and categorization.
+        Execute store_in_knowledge_base tool now.
         """
         
-        response = self.agent(prompt)
+        tool_response = self.agent(tool_prompt)
+        
         return {
             'status': 'stored',
-            'response': response.message
+            'response': str(tool_response)
         }
     
-    def search_and_summarize(
-        self,
-        topic: str,
-        context: Optional[str] = None
-    ) -> str:
-        """Search for a topic and provide a comprehensive summary."""
+    def search_and_summarize(self, topic: str, context: Optional[str] = None) -> str:
         logger.info(f"Searching and summarizing topic: {topic}")
         
-        prompt = f"""
-        Search the knowledge base for information about: {topic}
+        # Step 1: Tool invocation
+        tool_prompt = f"""
+        Use retrieve_from_knowledge_base tool to search for: "{topic}"
         {f'Additional context: {context}' if context else ''}
         
-        Provide a comprehensive analysis including:
-        1. Main topics and themes
-        2. Key points and findings
-        3. Any gaps in available information
-        4. Confidence level in the summary
+        Execute the tool with appropriate parameters.
+        """
+        
+        tool_response = self.agent(tool_prompt)
+        
+        # Step 2: Create summary
+        format_prompt = f"""
+        Based on these search results: {str(tool_response)}
+        
+        Create a comprehensive summary including:
+        - Main topics covered
+        - Key points found
+        - Information gaps
+        - Confidence in the summary
         """
         
         summary = self.agent.structured_output(
             DocumentSummary,
-            prompt
+            format_prompt
         )
+        
+        # Format and return...
         
         # Format the summary
         formatted_summary = f"""

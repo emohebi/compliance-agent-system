@@ -156,10 +156,12 @@ class MultiMCPOrchestrator:
         # Step 2: Retrieve all relevant documents
         with self.mcp_clients['knowledge_base']:
             kb_prompt = f"""
-            Retrieve all documents related to:
-            - {params.get('scope', 'all organizational policies')}
-            - Maximum results: 50
-            - Minimum score: 0.3
+            Use the retrieve_documents tool to get all documents related to:
+            - Scope: {params.get('scope', 'all organizational policies')}
+            - Max results: 50
+            - Min score: 0.3
+            
+            Execute retrieve_documents tool now.
             """
             kb_response = audit_agent(kb_prompt)
             results['steps'].append({
@@ -171,11 +173,13 @@ class MultiMCPOrchestrator:
         # Step 3: Comprehensive compliance check
         with self.mcp_clients['compliance']:
             compliance_prompt = f"""
-            Perform comprehensive compliance audit:
-            1. Check all retrieved documents for compliance
-            2. Scan for PII across all content
-            3. Validate against GDPR, HIPAA, and SOX
-            4. Generate detailed findings
+            Perform these compliance checks in sequence:
+            
+            1. Use check_compliance tool on all retrieved documents
+            2. Use scan_pii tool with masking enabled
+            3. Use validate_gdpr tool for GDPR compliance
+            
+            Execute each tool and compile results.
             """
             compliance_response = audit_agent(compliance_prompt)
             results['steps'].append({
@@ -241,21 +245,32 @@ class MultiMCPOrchestrator:
         
         for regulation in results['regulations']:
             with self.mcp_clients['compliance'], self.mcp_clients['knowledge_base']:
-                prompt = f"""
-                Assess compliance with {regulation}:
-                1. Retrieve relevant policies and procedures
-                2. Check current compliance status
-                3. Identify gaps and risks
-                4. Provide specific recommendations
+                # Step 1: Retrieve relevant docs
+                retrieve_prompt = f"""
+                Use retrieve_documents tool to find policies related to {regulation}.
+                
+                Execute the tool now.
                 """
                 
-                response = compliance_agent(prompt)
+                docs = compliance_agent(retrieve_prompt)
+                
+                # Step 2: Check compliance
+                check_prompt = f"""
+                Use check_compliance tool to assess {regulation} compliance.
+                
+                Content: {str(docs)}
+                
+                Execute the tool now.
+                """
+                
+                assessment = compliance_agent(check_prompt)
+                
                 results['assessments'].append({
                     'regulation': regulation,
-                    'assessment': response.message
+                    'assessment': str(assessment)
                 })
-        
-        return results
+                
+                return results
     
     def _incident_response(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Execute incident response workflow."""

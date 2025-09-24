@@ -1,8 +1,62 @@
 """Compliance rule models."""
 
-from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import List, Dict, Any, Optional, Literal
+
+# Use structured output for nice formatting
+class KeywordComplianceReport(BaseModel):
+    total_documents: int = Field(description="Total documents checked")
+    compliant_count: int = Field(description="Number of compliant documents")
+    non_compliant_count: int = Field(description="Number of non-compliant documents")
+    compliance_rate: float = Field(description="Overall compliance rate")
+    non_compliant_details: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Details of non-compliant documents"
+    )
+    recommendations: List[str] = Field(
+        default_factory=list,
+        description="Recommendations to achieve compliance"
+    )
+
+class RemediationPlan(BaseModel):
+    """Model for remediation suggestions."""
+    priority_actions: List[Any] = Field(  # Changed from List[Dict[str, str]] to List[Any]
+        default_factory=list,
+        description="Priority actions - can be strings or dicts with 'action', 'priority', and 'effort' keys"
+    )
+    prevention_measures: List[str] = Field(
+        default_factory=list,
+        description="Measures to prevent future violations"
+    )
+    estimated_timeline: str = Field(
+        default="To be determined",
+        description="Estimated timeline for remediation"
+    )
+
+class ActionPlan(BaseModel):
+    """Model for agent's action plan."""
+    action_type: Literal[
+        "search_kb", 
+        "check_compliance", 
+        "run_workflow",
+        "add_document", 
+        "view_stats", 
+        "batch_check",
+        "generate_report",
+        "keyword_compliance",  # Add this
+        "unknown"
+    ] = Field(description="Type of action to perform")
+    # ... rest of the fields
+    parameters: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Parameters for the action"
+    )
+    reasoning: str = Field(description="Why this action was chosen")
+    requires_input: List[str] = Field(
+        default_factory=list,
+        description="Additional inputs needed from user"
+    )
 
 class AgentComplianceResult(BaseModel):
     """Simplified compliance result for agent structured output."""
@@ -22,14 +76,6 @@ class AgentComplianceResult(BaseModel):
         default_factory=list,
         description="List of warning descriptions (e.g., 'Potential PII', 'Weak security practice')"
     )
-
-class RemediationPlan(BaseModel):
-    """Model for remediation suggestions."""
-    priority_actions: List[Dict[str, str]] = Field(
-        description="Priority actions with 'action', 'priority', and 'effort' keys"
-    )
-    prevention_measures: List[str] = Field(description="Measures to prevent future violations")
-    estimated_timeline: str = Field(description="Estimated timeline for remediation")
 
 class ComplianceReport(BaseModel):
     """Model for compliance report."""

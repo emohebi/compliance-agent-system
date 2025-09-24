@@ -80,149 +80,170 @@ class MCPEnhancedAgent:
                 Always be thorough and provide clear, actionable insights."""
             )
     
-    def process_document_compliance(
-        self,
-        query: str,
-        check_gdpr: bool = True
-    ) -> Dict[str, Any]:
-        """
-        Process document retrieval and compliance checking.
-        
-        Args:
-            query: Search query
-            check_gdpr: Whether to include GDPR validation
-            
-        Returns:
-            Combined results
-        """
+    def process_document_compliance(self, query: str, check_gdpr: bool = True) -> Dict[str, Any]:
         with self.compliance_mcp_client, self.kb_mcp_client:
-            prompt = f"""
-            Execute the following workflow:
+            # Get tools
+            all_tools = (self.compliance_mcp_client.list_tools_sync() + 
+                        self.kb_mcp_client.list_tools_sync())
             
-            1. Retrieve documents matching: "{query}"
-            2. Check the retrieved content for compliance violations
-            3. Scan for PII with masking enabled
-            {"4. Validate GDPR compliance" if check_gdpr else ""}
-            5. Generate a comprehensive compliance report
+            # Create agent
+            agent = Agent(
+                model=self.model,
+                tools=all_tools,
+                system_prompt="You have MCP tools for compliance and KB access."
+            )
             
-            Provide a complete analysis with all findings and recommendations.
+            # Step 1: Retrieve documents
+            retrieve_prompt = f"""
+            Use the retrieve_documents tool to find documents matching: "{query}"
+            
+            Execute retrieve_documents tool now.
             """
             
-            response = self.agent(prompt)
+            retrieval_response = agent(retrieve_prompt)
+            
+            # Step 2: Check compliance
+            compliance_prompt = f"""
+            Use the check_compliance tool to analyze the retrieved content.
+            
+            Content to check: {str(retrieval_response)}
+            
+            Execute check_compliance tool now.
+            """
+            
+            compliance_response = agent(compliance_prompt)
+            
+            # Step 3: GDPR check if needed
+            if check_gdpr:
+                gdpr_prompt = f"""
+                Use the validate_gdpr tool on the content.
+                
+                Execute validate_gdpr tool now.
+                """
+                
+                gdpr_response = agent(gdpr_prompt)
+            
+            # Step 4: Generate report
+            report_prompt = f"""
+            Use generate_compliance_report tool with all the findings.
+            
+            Execute the tool now.
+            """
+            
+            report_response = agent(report_prompt)
             
             return {
                 'query': query,
-                'analysis': response.message,
-                'usage': response.metrics.accumulated_usage if hasattr(response, 'metrics') else {}
+                'analysis': str(report_response),
+                'usage': report_response.metrics.accumulated_usage if hasattr(report_response, 'metrics') else {}
             }
     
-    def batch_scan_pii(
-        self,
-        documents: List[str],
-        mask: bool = True
-    ) -> List[Dict[str, Any]]:
-        """
-        Scan multiple documents for PII.
-        
-        Args:
-            documents: List of document contents
-            mask: Whether to mask found PII
-            
-        Returns:
-            List of scan results
-        """
+    def batch_scan_pii(self, documents: List[str], mask: bool = True) -> List[Dict[str, Any]]:
         results = []
         
         with self.compliance_mcp_client:
+            # Get tools and create agent
+            tools = self.compliance_mcp_client.list_tools_sync()
+            agent = Agent(model=self.model, tools=tools)
+            
             for i, doc in enumerate(documents):
-                prompt = f"""
-                Scan the following document for PII.
-                Enable masking: {mask}
+                # Step 1: Tool invocation
+                tool_prompt = f"""
+                Use the scan_pii tool on this document.
                 
-                Document {i+1}:
-                {doc[:500]}...
+                Parameters:
+                - content: {doc[:300]}...
+                - mask: {mask}
                 
-                Provide detailed PII findings.
+                Execute scan_pii tool now.
                 """
                 
-                response = self.agent(prompt)
+                tool_response = agent(tool_prompt)
+                
                 results.append({
                     'document_index': i,
-                    'scan_results': response.message
+                    'scan_results': str(tool_response)
                 })
         
         return results
     
-    def validate_regulatory_compliance(
-        self,
-        content: str,
-        regulations: List[str] = ["GDPR", "HIPAA", "PCI-DSS"]
-    ) -> Dict[str, Any]:
-        """
-        Validate content against multiple regulations.
-        
-        Args:
-            content: Content to validate
-            regulations: List of regulations to check
-            
-        Returns:
-            Validation results
-        """
+    def validate_regulatory_compliance(self, content: str, regulations: List[str] = ["GDPR", "HIPAA", "PCI-DSS"]) -> Dict[str, Any]:
         with self.compliance_mcp_client:
-            prompt = f"""
-            Validate the following content against these regulations: {', '.join(regulations)}
+            tools = self.compliance_mcp_client.list_tools_sync()
+            agent = Agent(model=self.model, tools=tools)
             
-            Content:
-            {content[:1000]}...
+            validation_results = {}
             
-            For each regulation:
-            1. Check specific requirements
-            2. Identify gaps
-            3. Provide recommendations
-            
-            Use validate_gdpr for GDPR and check_compliance for others.
-            """
-            
-            response = self.agent(prompt)
+            for regulation in regulations:
+                if regulation == "GDPR":
+                    tool_prompt = f"""
+                    Use the validate_gdpr tool to check GDPR compliance.
+                    
+                    Content: {content[:500]}...
+                    
+                    Execute validate_gdpr tool now.
+                    """
+                else:
+                    tool_prompt = f"""
+                    Use the check_compliance tool for {regulation} requirements.
+                    
+                    Content: {content[:500]}...
+                    Regulation: {regulation}
+                    
+                    Execute check_compliance tool now.
+                    """
+                
+                tool_response = agent(tool_prompt)
+                validation_results[regulation] = str(tool_response)
             
             return {
                 'regulations_checked': regulations,
-                'validation_results': response.message
+                'validation_results': validation_results
             }
     
-    def generate_executive_report(
-        self,
-        search_queries: List[str]
-    ) -> str:
-        """
-        Generate an executive compliance report for multiple searches.
-        
-        Args:
-            search_queries: List of search queries to process
-            
-        Returns:
-            Executive report
-        """
+    def generate_executive_report(self, search_queries: List[str]) -> str:
         with self.compliance_mcp_client, self.kb_mcp_client:
-            prompt = f"""
-            Generate an executive compliance report:
+            all_tools = (self.compliance_mcp_client.list_tools_sync() + 
+                        self.kb_mcp_client.list_tools_sync())
             
-            1. For each query, retrieve relevant documents:
-               {json.dumps(search_queries, indent=2)}
+            agent = Agent(model=self.model, tools=all_tools)
             
-            2. Check compliance for all retrieved content
+            all_results = []
             
-            3. Identify common patterns and systemic issues
+            # Step 1: Retrieve documents for each query
+            for query in search_queries:
+                retrieve_prompt = f"""
+                Use retrieve_documents tool to search for: "{query}"
+                
+                Execute the tool now.
+                """
+                
+                retrieval = agent(retrieve_prompt)
+                
+                # Step 2: Check compliance for retrieved content
+                compliance_prompt = f"""
+                Use check_compliance tool on the retrieved content.
+                
+                Execute the tool now.
+                """
+                
+                compliance = agent(compliance_prompt)
+                
+                all_results.append({
+                    'query': query,
+                    'retrieval': str(retrieval),
+                    'compliance': str(compliance)
+                })
             
-            4. Generate a comprehensive executive report including:
-               - Executive summary
-               - Key findings across all documents
-               - Risk assessment
-               - Prioritized recommendations
-               - Compliance metrics
+            # Step 3: Generate final report
+            report_prompt = f"""
+            Use generate_compliance_report tool to create an executive report.
             
-            Format the report in Markdown for easy reading.
+            Findings: {json.dumps(all_results, indent=2)}
+            
+            Execute the tool to create comprehensive report.
             """
             
-            response = self.agent(prompt)
-            return response.message
+            report_response = agent(report_prompt)
+            
+            return str(report_response)
